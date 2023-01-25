@@ -6,12 +6,6 @@ import async from 'async';
 import db from '../database';
 import user from '../user';
 
-type data = 
-{
-    bookmark: any
-    uid: any
-}
-
 module.exports = function (Topics) {
     Topics.getUserBookmark = async function (tid: string, uid: string) {
         if (parseInt(uid, 10) <= 0) {
@@ -43,10 +37,10 @@ module.exports = function (Topics) {
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
-        const uidData = bookmarks.map(b => ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
+        const uidData = bookmarks.map((b: { value: any; score: string; }) => ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
             .filter((data: { bookmark: number; }) => data.bookmark >= minIndex);
 
-        await async.eachLimit(uidData, 50, async (data) => {
+        await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: any}) => {
             let bookmark = Math.min(data.bookmark, maxIndex);
 
             postIndices.forEach((i) => {

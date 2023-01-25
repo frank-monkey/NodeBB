@@ -1,10 +1,10 @@
 
 'use strict';
 
-const async = require('async');
+import async from 'async';
 
-const db = require('../database');
-const user = require('../user');
+import db from '../database';
+import user from '../user';
 
 module.exports = function (Topics) {
     Topics.getUserBookmark = async function (tid, uid) {

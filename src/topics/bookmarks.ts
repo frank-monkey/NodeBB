@@ -1,35 +1,36 @@
-
-// 'use strict';
-
 import async from 'async';
-
 import db from '../database';
 import user from '../user';
+
 import { TopicObject } from '../types';
 
-// module.exports = function (Topics) {
-export default (Topics : TopicObject) => {
-    Topics.getUserBookmark = async function (tid: number, uid: string) : Promise<TopicObject|null> {
+export default (Topics) => {
+    Topics.getUserBookmark = async function (tid: number, uid: string) : Promise<number|null> {
         if (parseInt(uid, 10) <= 0) {
             return null;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.sortedSetScore(`tid:${tid}:bookmarks`, uid);
     };
 
-    Topics.getUserBookmarks = async function (tids: number[], uid: string) {
+    Topics.getUserBookmarks = async function (tids: number[], uid: string) : Promise<number[]|null[]>{
         if (parseInt(uid, 10) <= 0) {
             return tids.map(() => null);
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid);
     };
 
     Topics.setUserBookmark = async function (tid: number, uid: string, index: string) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await db.sortedSetAdd(`tid:${tid}:bookmarks`, index, uid);
     };
 
     Topics.getTopicBookmarks = async function (tid: number) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.getSortedSetRangeWithScores(`tid:${tid}:bookmarks`, 0, -1);
     };
+    /*
     Topics.updateTopicBookmarks = async function (tid, pids) {
         const maxIndex = await Topics.getPostCount(tid);
         const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
@@ -64,4 +65,5 @@ export default (Topics : TopicObject) => {
             await Topics.setUserBookmark(tid, data.uid, bookmark);
         });
     };
+    */
 };

@@ -1,58 +1,50 @@
 
-'use strict';
+// 'use strict';
 
 import async from 'async';
 
 import db from '../database';
 import user from '../user';
+import { TopicObject } from '../types';
 
-module.exports = function (Topics: {
-        getUserBookmark: (tid: string, uid: string) => Promise<any>;
-        getUserBookmarks: (tids: string[], uid:string) => Promise<any>;
-        setUserBookmark: ((tid: string, uid: string, index: string | number) => any);
-        getTopicBookmarks: (arg0: string) => any;
-        updateTopicBookmarks: (tid: string, pids: string[]) => Promise<void>;
-        getPostCount: (arg0: string) => number;}) 
-{
-    Topics.getUserBookmark = async function (tid: string, uid: string) {
+// module.exports = function (Topics) {
+export default (Topics : TopicObject) => {
+    Topics.getUserBookmark = async function (tid: number, uid: string) : Promise<TopicObject|null> {
         if (parseInt(uid, 10) <= 0) {
             return null;
         }
         return await db.sortedSetScore(`tid:${tid}:bookmarks`, uid);
     };
 
-    Topics.getUserBookmarks = async function (tids: string[], uid: string) {
+    Topics.getUserBookmarks = async function (tids: number[], uid: string) {
         if (parseInt(uid, 10) <= 0) {
             return tids.map(() => null);
         }
         return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid);
     };
 
-    Topics.setUserBookmark = async function (tid: string, uid: string, index: string) {
+    Topics.setUserBookmark = async function (tid: number, uid: string, index: string) {
         await db.sortedSetAdd(`tid:${tid}:bookmarks`, index, uid);
     };
 
-    Topics.getTopicBookmarks = async function (tid:string) {
+    Topics.getTopicBookmarks = async function (tid: number) {
         return await db.getSortedSetRangeWithScores(`tid:${tid}:bookmarks`, 0, -1);
     };
-
-    Topics.updateTopicBookmarks = async function (tid:string , pids:string[]) {
+    Topics.updateTopicBookmarks = async function (tid, pids) {
         const maxIndex = await Topics.getPostCount(tid);
         const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
-        const postIndices = indices.map((i: number | null) => (i === null ? 0 : i + 1));
+        const postIndices = indices.map(i => (i === null ? 0 : i + 1));
         const minIndex = Math.min(...postIndices);
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
-        const uidData = 
-            bookmarks.map((b: { value: string; score: string; }) =>
-            ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
-            .filter((data: { bookmark: number; }) => data.bookmark >= minIndex);
+        const uidData = bookmarks.map(b => ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
+            .filter(data => data.bookmark >= minIndex);
 
-        await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: string}) => {
+        await async.eachLimit(uidData, 50, async (data) => {
             let bookmark = Math.min(data.bookmark, maxIndex);
 
-            postIndices.forEach((i: number) => {
+            postIndices.forEach((i) => {
                 if (i < data.bookmark) {
                     bookmark -= 1;
                 }

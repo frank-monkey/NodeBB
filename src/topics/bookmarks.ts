@@ -6,7 +6,14 @@ import async from 'async';
 import db from '../database';
 import user from '../user';
 
-module.exports = function (Topics) {
+module.exports = function (Topics: {
+        getUserBookmark: (tid: string, uid: string) => Promise<any>;
+        getUserBookmarks: (tids: string[], uid:string) => Promise<any>;
+        setUserBookmark: ((tid: string, uid: string, index: string | number) => any);
+        getTopicBookmarks: (arg0: string) => any;
+        updateTopicBookmarks: (tid: string, pids: string[]) => Promise<void>;
+        getPostCount: (arg0: string) => number;}) 
+{
     Topics.getUserBookmark = async function (tid: string, uid: string) {
         if (parseInt(uid, 10) <= 0) {
             return null;
@@ -37,13 +44,15 @@ module.exports = function (Topics) {
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
-        const uidData = bookmarks.map((b: { value: any; score: string; }) => ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
+        const uidData = 
+            bookmarks.map((b: { value: string; score: string; }) =>
+            ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
             .filter((data: { bookmark: number; }) => data.bookmark >= minIndex);
 
-        await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: any}) => {
+        await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: string}) => {
             let bookmark = Math.min(data.bookmark, maxIndex);
 
-            postIndices.forEach((i) => {
+            postIndices.forEach((i: number) => {
                 if (i < data.bookmark) {
                     bookmark -= 1;
                 }

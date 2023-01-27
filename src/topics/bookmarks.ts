@@ -7,7 +7,7 @@ interface topicObject{
     getUserBookmarks(tid: number[], uid: string) : Promise<number[]|null[]>;
     setUserBookmark(tid: number, uid: string, index: number) : Promise<void>;
     getTopicBookmarks(tid: number) : Promise<any>;
-    getPostCount(tid: number) : any;
+    getPostCount(tid: number) : Promise<number>;
     updateTopicBookmarks(tid: number, pid: number[]) : Promise<void>;
 }
 
@@ -39,17 +39,18 @@ export default (Topics : topicObject) => {
     };
 
     Topics.updateTopicBookmarks = async function (tid : number, pids : number[]) {
-        const maxIndex : number= await Topics.getPostCount(tid);
+        const maxIndex : number = await Topics.getPostCount(tid);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
-        const postIndices = indices.map((i : number | null) => (i === null ? 0 : i + 1));
-        const minIndex = Math.min(...postIndices);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        const postIndices : Array<number|null> = indices.map((i : number | null) => (i === null ? 0 : i + 1));
+        const minIndex : number = Math.min(...postIndices);
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
         const uidData =
-            bookmarks.map((b: { value: string, score: string; }) =>
-                ({ uid: b.value, bookmark: parseInt(b.score, 10) })).filter((data: { bookmark: number, uid: number; }) => data.bookmark >= minIndex);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+            bookmarks.map((b: { value: string, score: string; }) => ({ uid: b.value, bookmark: parseInt(b.score, 10) })).filter((data: { bookmark: number, uid: number; }) => data.bookmark >= minIndex);
 
         await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: string}) => {
             let bookmark = Math.min(data.bookmark, maxIndex);
@@ -66,7 +67,9 @@ export default (Topics : topicObject) => {
                 return;
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             const settings = await user.getSettings(data.uid);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
             if (settings.topicPostSort === 'most_votes') {
                 return;
             }

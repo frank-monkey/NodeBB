@@ -2,14 +2,19 @@ import async from 'async';
 import db from '../database';
 import user from '../user';
 
-import { TopicObject } from '../types';
+interface topicObject{
+    getUserBookmark(tid: number, uid: string) : Promise<number|null>;
+    getUserBookmarks(tid: number[], uid: string) : Promise<number[]|null[]>;
+    setUserBookmark(tid: number, uid: string, index: string) : Promise<void>;
+    getTopicBookmarks(tid: number) : Promise<any>;
+    updateTopicBookmarks(tid: number, pid: number[]) : Promise<void>;
+}
 
-export default (Topics) => {
+export default (Topics : topicObject) => {
     Topics.getUserBookmark = async function (tid: number, uid: string) : Promise<number|null> {
         if (parseInt(uid, 10) <= 0) {
             return null;
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.sortedSetScore(`tid:${tid}:bookmarks`, uid);
     };
 
@@ -17,32 +22,32 @@ export default (Topics) => {
         if (parseInt(uid, 10) <= 0) {
             return tids.map(() => null);
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid);
     };
 
-    Topics.setUserBookmark = async function (tid: number, uid: string, index: string) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+    Topics.setUserBookmark = async function (tid: number, uid: string, index: string) : Promise<void>{
         await db.sortedSetAdd(`tid:${tid}:bookmarks`, index, uid);
     };
 
-    Topics.getTopicBookmarks = async function (tid: number) {
+    Topics.getTopicBookmarks = async function (tid: number) : Promise<any> {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         return await db.getSortedSetRangeWithScores(`tid:${tid}:bookmarks`, 0, -1);
     };
-    /*
-    Topics.updateTopicBookmarks = async function (tid, pids) {
+
+    Topics.updateTopicBookmarks = async function (tid : number, pids : number[]) {
         const maxIndex = await Topics.getPostCount(tid);
         const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
-        const postIndices = indices.map(i => (i === null ? 0 : i + 1));
+        const postIndices = indices.map((i : number | null) => (i === null ? 0 : i + 1));
         const minIndex = Math.min(...postIndices);
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
-        const uidData = bookmarks.map(b => ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
-            .filter(data => data.bookmark >= minIndex);
+        const uidData = 
+            bookmarks.map((b: { value: string, score: string; }) =>
+            ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
+                .filter((data: { bookmark: number, uid: number; }) => data.bookmark >= minIndex);
 
-        await async.eachLimit(uidData, 50, async (data) => {
+        await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: string}) => {
             let bookmark = Math.min(data.bookmark, maxIndex);
 
             postIndices.forEach((i) => {
@@ -65,5 +70,4 @@ export default (Topics) => {
             await Topics.setUserBookmark(tid, data.uid, bookmark);
         });
     };
-    */
 };

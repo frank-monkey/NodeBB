@@ -16,17 +16,20 @@ export default (Topics : topicObject) => {
         if (parseInt(uid, 10) <= 0) {
             return null;
         }
-        return await db.sortedSetScore(`tid:${tid}:bookmarks`, uid);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        return await db.sortedSetScore(`tid:${tid}:bookmarks`, uid) as number|null;
     };
 
-    Topics.getUserBookmarks = async function (tids: number[], uid: string) : Promise<number[]|null[]>{
+    Topics.getUserBookmarks = async function (tids: number[], uid: string) : Promise<number[]|null[]> {
         if (parseInt(uid, 10) <= 0) {
-            return tids.map(() => null);
+            return tids.map<string>(() => null) as null[];
         }
-        return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid) as number[]|null[];
     };
 
-    Topics.setUserBookmark = async function (tid: number, uid: string, index: number) : Promise<void>{
+    Topics.setUserBookmark = async function (tid: number, uid: string, index: number) : Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         await db.sortedSetAdd(`tid:${tid}:bookmarks`, index, uid);
     };
 
@@ -36,17 +39,17 @@ export default (Topics : topicObject) => {
     };
 
     Topics.updateTopicBookmarks = async function (tid : number, pids : number[]) {
-        const maxIndex = await Topics.getPostCount(tid);
+        const maxIndex : number= await Topics.getPostCount(tid);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
         const postIndices = indices.map((i : number | null) => (i === null ? 0 : i + 1));
         const minIndex = Math.min(...postIndices);
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
 
-        const uidData = 
+        const uidData =
             bookmarks.map((b: { value: string, score: string; }) =>
-            ({ uid: b.value, bookmark: parseInt(b.score, 10) }))
-                .filter((data: { bookmark: number, uid: number; }) => data.bookmark >= minIndex);
+                ({ uid: b.value, bookmark: parseInt(b.score, 10) })).filter((data: { bookmark: number, uid: number; }) => data.bookmark >= minIndex);
 
         await async.eachLimit(uidData, 50, async (data: {bookmark: any, uid: string}) => {
             let bookmark = Math.min(data.bookmark, maxIndex);

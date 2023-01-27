@@ -5,8 +5,9 @@ import user from '../user';
 interface topicObject{
     getUserBookmark(tid: number, uid: string) : Promise<number|null>;
     getUserBookmarks(tid: number[], uid: string) : Promise<number[]|null[]>;
-    setUserBookmark(tid: number, uid: string, index: string) : Promise<void>;
+    setUserBookmark(tid: number, uid: string, index: number) : Promise<void>;
     getTopicBookmarks(tid: number) : Promise<any>;
+    getPostCount(tid: number) : any;
     updateTopicBookmarks(tid: number, pid: number[]) : Promise<void>;
 }
 
@@ -25,7 +26,7 @@ export default (Topics : topicObject) => {
         return await db.sortedSetsScore(tids.map(tid => `tid:${tid}:bookmarks`), uid);
     };
 
-    Topics.setUserBookmark = async function (tid: number, uid: string, index: string) : Promise<void>{
+    Topics.setUserBookmark = async function (tid: number, uid: string, index: number) : Promise<void>{
         await db.sortedSetAdd(`tid:${tid}:bookmarks`, index, uid);
     };
 

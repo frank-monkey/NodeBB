@@ -41,9 +41,9 @@ export default (Topics : topicObject) => {
     Topics.updateTopicBookmarks = async function (tid : number, pids : number[]) {
         const maxIndex : number = await Topics.getPostCount(tid);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const indices = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
+        const indices : Array<number | null> = await db.sortedSetRanks(`tid:${tid}:posts`, pids);
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-        const postIndices : Array<number|null> = indices.map((i : number | null) => (i === null ? 0 : i + 1));
+        const postIndices : Array<number | null> = indices.map((i : number | null) => (i === null ? 0 : i + 1));
         const minIndex : number = Math.min(...postIndices);
 
         const bookmarks = await Topics.getTopicBookmarks(tid);
